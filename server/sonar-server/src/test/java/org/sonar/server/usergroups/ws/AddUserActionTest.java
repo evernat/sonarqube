@@ -31,7 +31,7 @@ import org.sonar.db.user.GroupDto;
 import org.sonar.db.user.UserDto;
 import org.sonar.server.exceptions.NotFoundException;
 import org.sonar.server.exceptions.UnauthorizedException;
-import org.sonar.server.organization.DefaultOrganizationProviderRule;
+import org.sonar.server.organization.TestDefaultOrganizationProvider;
 import org.sonar.server.tester.UserSessionRule;
 import org.sonar.server.ws.WsTester;
 
@@ -49,7 +49,7 @@ public class AddUserActionTest {
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
-  private DefaultOrganizationProviderRule defaultOrganizationProvider = DefaultOrganizationProviderRule.create(db);
+  private TestDefaultOrganizationProvider defaultOrganizationProvider = TestDefaultOrganizationProvider.from(db);
   private WsTester ws;
 
   @Before
@@ -59,7 +59,7 @@ public class AddUserActionTest {
 
   @Test
   public void add_user_to_group_referenced_by_its_id() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "admins");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "admins");
     UserDto user = db.users().insertUser("my-admin");
 
     loginAsAdmin();
@@ -74,7 +74,7 @@ public class AddUserActionTest {
 
   @Test
   public void add_user_to_group_referenced_by_its_name() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "a-group");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "a-group");
     UserDto user = db.users().insertUser("user_login");
 
     loginAsAdmin();
@@ -106,7 +106,7 @@ public class AddUserActionTest {
 
   @Test
   public void add_user_to_another_group() throws Exception {
-    OrganizationDto defaultOrg = defaultOrganizationProvider.getDto();
+    OrganizationDto defaultOrg = db.getDefaultOrganization();
     GroupDto admins = db.users().insertGroup(defaultOrg, "admins");
     GroupDto users = db.users().insertGroup(defaultOrg, "users");
     UserDto user = db.users().insertUser("my-admin");
@@ -124,7 +124,7 @@ public class AddUserActionTest {
 
   @Test
   public void user_is_already_member_of_group() throws Exception {
-    GroupDto users = db.users().insertGroup(defaultOrganizationProvider.getDto(), "users");
+    GroupDto users = db.users().insertGroup(db.getDefaultOrganization(), "users");
     UserDto user = db.users().insertUser("my-admin");
     db.users().insertMember(users, user);
 
@@ -141,7 +141,7 @@ public class AddUserActionTest {
 
   @Test
   public void group_has_multiple_members() throws Exception {
-    GroupDto users = db.users().insertGroup(defaultOrganizationProvider.getDto(), "user");
+    GroupDto users = db.users().insertGroup(db.getDefaultOrganization(), "user");
     UserDto user1 = db.users().insertUser("user1");
     UserDto user2 = db.users().insertUser("user2");
     db.users().insertMember(users, user1);
@@ -172,7 +172,7 @@ public class AddUserActionTest {
 
   @Test
   public void fail_if_user_does_not_exist() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "admins");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "admins");
 
     expectedException.expect(NotFoundException.class);
 
@@ -185,7 +185,7 @@ public class AddUserActionTest {
 
   @Test
   public void fail_if_not_administrator() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "admins");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "admins");
     UserDto user = db.users().insertUser("my-admin");
 
     expectedException.expect(UnauthorizedException.class);

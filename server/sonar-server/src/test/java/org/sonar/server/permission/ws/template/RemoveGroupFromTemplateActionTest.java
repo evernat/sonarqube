@@ -61,7 +61,7 @@ public class RemoveGroupFromTemplateActionTest extends BasePermissionWsTest<Remo
   public void setUp() {
     userSession.login().setGlobalPermissions(GlobalPermissions.SYSTEM_ADMIN);
 
-    group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "group-name");
+    group = db.users().insertGroup(db.getDefaultOrganization(), "group-name");
     template = insertTemplate();
     addGroupToTemplate(template, group.getId(), PERMISSION);
   }

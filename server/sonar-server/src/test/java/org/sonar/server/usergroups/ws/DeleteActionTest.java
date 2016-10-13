@@ -36,7 +36,7 @@ import org.sonar.db.organization.OrganizationDto;
 import org.sonar.db.user.GroupDto;
 import org.sonar.db.user.UserDto;
 import org.sonar.server.exceptions.NotFoundException;
-import org.sonar.server.organization.DefaultOrganizationProviderRule;
+import org.sonar.server.organization.TestDefaultOrganizationProvider;
 import org.sonar.server.tester.UserSessionRule;
 import org.sonar.server.ws.WsTester;
 
@@ -56,13 +56,13 @@ public class DeleteActionTest {
   public DbTester db = DbTester.create(System2.INSTANCE);
 
   private ComponentDbTester componentTester = new ComponentDbTester(db);
-  private DefaultOrganizationProviderRule defaultOrganizationProvider = DefaultOrganizationProviderRule.create(db);
+  private TestDefaultOrganizationProvider defaultOrganizationProvider = TestDefaultOrganizationProvider.from(db);
   private GroupDto defaultGroup;
   private WsTester ws;
 
   @Before
   public void setUp() {
-    defaultGroup = db.users().insertGroup(defaultOrganizationProvider.getDto(), CoreProperties.CORE_DEFAULT_GROUP_DEFAULT_VALUE);
+    defaultGroup = db.users().insertGroup(db.getDefaultOrganization(), CoreProperties.CORE_DEFAULT_GROUP_DEFAULT_VALUE);
     Settings settings = new MapSettings().setProperty(CoreProperties.CORE_DEFAULT_GROUP, CoreProperties.CORE_DEFAULT_GROUP_DEFAULT_VALUE);
 
     ws = new WsTester(new UserGroupsWs(
@@ -75,7 +75,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_by_id() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "to-delete");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "to-delete");
 
     loginAsAdmin();
     newRequest()
@@ -88,7 +88,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_by_name_on_default_organization() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "to-delete");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "to-delete");
 
     loginAsAdmin();
     newRequest()
@@ -131,7 +131,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_members() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "to-be-deleted");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "to-be-deleted");
     UserDto user = db.users().insertUser("a-user");
     db.users().insertMember(group, user);
 
@@ -146,7 +146,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_permissions() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "to-be-deleted");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "to-be-deleted");
     ComponentDto project = componentTester.insertComponent(ComponentTesting.newProjectDto());
     db.users().insertProjectPermissionOnGroup(group, UserRole.ADMIN, project);
 
@@ -161,7 +161,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_permission_templates() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "to-be-deleted");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "to-be-deleted");
     // TODO
 
     loginAsAdmin();
@@ -204,7 +204,7 @@ public class DeleteActionTest {
 
   @Test
   public void cannot_delete_last_system_admin_group() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "system-admins");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "system-admins");
     db.users().insertPermissionOnGroup(group, SYSTEM_ADMIN);
 
     loginAsAdmin();
@@ -219,7 +219,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_system_admin_group_if_not_last() throws Exception {
-    OrganizationDto defaultOrg = defaultOrganizationProvider.getDto();
+    OrganizationDto defaultOrg = db.getDefaultOrganization();
     GroupDto funkyAdmins = db.users().insertGroup(defaultOrg, "funky-admins");
     db.users().insertPermissionOnGroup(funkyAdmins, SYSTEM_ADMIN);
     GroupDto boringAdmins = db.users().insertGroup(defaultOrg, "boring-admins");
@@ -236,7 +236,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_last_system_admin_group_if_admin_user_left() throws Exception {
-    GroupDto lastGroup = db.users().insertGroup(defaultOrganizationProvider.getDto(), "last-group");
+    GroupDto lastGroup = db.users().insertGroup(db.getDefaultOrganization(), "last-group");
     db.users().insertPermissionOnGroup(lastGroup, SYSTEM_ADMIN);
     UserDto bigBoss = db.users().insertUser("big.boss");
     db.users().insertPermissionOnUser(bigBoss, SYSTEM_ADMIN);

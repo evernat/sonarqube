@@ -29,13 +29,12 @@ import org.sonar.core.permission.GlobalPermissions;
 import org.sonar.db.DbSession;
 import org.sonar.db.DbTester;
 import org.sonar.db.organization.OrganizationDto;
-import org.sonar.db.organization.OrganizationTesting;
 import org.sonar.db.user.GroupDto;
 import org.sonar.db.user.UserDto;
 import org.sonar.server.exceptions.ForbiddenException;
 import org.sonar.server.exceptions.NotFoundException;
 import org.sonar.server.exceptions.ServerException;
-import org.sonar.server.organization.DefaultOrganizationProviderRule;
+import org.sonar.server.organization.TestDefaultOrganizationProvider;
 import org.sonar.server.platform.PersistentSettings;
 import org.sonar.server.tester.UserSessionRule;
 import org.sonar.server.ws.WsTester;
@@ -46,7 +45,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.sonar.db.organization.OrganizationTesting.newOrganizationDto;
 
 public class UpdateActionTest {
 
@@ -60,7 +58,7 @@ public class UpdateActionTest {
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
-  private DefaultOrganizationProviderRule defaultOrganizationProvider = DefaultOrganizationProviderRule.create(db);
+  private TestDefaultOrganizationProvider defaultOrganizationProvider = TestDefaultOrganizationProvider.from(db);
   private PersistentSettings settings = mock(PersistentSettings.class);
   private WsTester ws = new WsTester(new UserGroupsWs(new UpdateAction(db.getDbClient(), userSession, new GroupWsSupport(db.getDbClient(), defaultOrganizationProvider), settings, defaultOrganizationProvider)));
 
@@ -73,7 +71,7 @@ public class UpdateActionTest {
 
   @Test
   public void update_both_name_and_description() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "Initial Name");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "Initial Name");
     UserDto user = db.users().insertUser();
     db.users().insertMember(group, user);
 
@@ -93,7 +91,7 @@ public class UpdateActionTest {
 
   @Test
   public void update_only_name() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "Initial Name");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "Initial Name");
 
     loginAsAdmin();
     newRequest()
@@ -110,7 +108,7 @@ public class UpdateActionTest {
 
   @Test
   public void update_only_description() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "Initial Name");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "Initial Name");
 
     loginAsAdmin();
     newRequest()
@@ -127,7 +125,7 @@ public class UpdateActionTest {
 
   @Test
   public void update_default_group_name_also_update_default_group_property() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), DEFAULT_GROUP_NAME_VALUE);
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), DEFAULT_GROUP_NAME_VALUE);
 
     loginAsAdmin();
     newRequest()
@@ -141,7 +139,7 @@ public class UpdateActionTest {
   @Test
   public void update_default_group_name_does_not_update_default_group_setting_when_null() throws Exception {
     when(settings.getString(DEFAULT_GROUP_NAME_KEY)).thenReturn(null);
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), DEFAULT_GROUP_NAME_VALUE);
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), DEFAULT_GROUP_NAME_VALUE);
 
     loginAsAdmin();
     newRequest()
@@ -156,7 +154,7 @@ public class UpdateActionTest {
   public void do_not_update_default_group_of_default_organization_if_updating_group_on_non_default_organization() throws Exception {
     OrganizationDto org = db.organizations().insert();
     when(settings.getString(DEFAULT_GROUP_NAME_KEY)).thenReturn(DEFAULT_GROUP_NAME_VALUE);
-    GroupDto groupInDefaultOrg = db.users().insertGroup(defaultOrganizationProvider.getDto(), DEFAULT_GROUP_NAME_VALUE);
+    GroupDto groupInDefaultOrg = db.users().insertGroup(db.getDefaultOrganization(), DEFAULT_GROUP_NAME_VALUE);
     GroupDto group = db.users().insertGroup(org, DEFAULT_GROUP_NAME_VALUE);
 
     loginAsAdmin();
@@ -183,7 +181,7 @@ public class UpdateActionTest {
 
   @Test
   public void fail_if_name_is_too_short() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "a name");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "a name");
     loginAsAdmin();
 
     expectedException.expect(IllegalArgumentException.class);
@@ -197,7 +195,7 @@ public class UpdateActionTest {
 
   @Test
   public void fail_if_name_is_too_long() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "a name");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "a name");
     loginAsAdmin();
 
     expectedException.expect(IllegalArgumentException.class);
@@ -211,7 +209,7 @@ public class UpdateActionTest {
 
   @Test
   public void fail_if_new_name_is_anyone() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "a name");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "a name");
     loginAsAdmin();
 
     expectedException.expect(IllegalArgumentException.class);
@@ -225,7 +223,7 @@ public class UpdateActionTest {
 
   @Test
   public void fail_to_update_if_name_already_exists() throws Exception {
-    OrganizationDto defaultOrg = defaultOrganizationProvider.getDto();
+    OrganizationDto defaultOrg = db.getDefaultOrganization();
     GroupDto groupToBeRenamed = db.users().insertGroup(defaultOrg, "a name");
     String newName = "new-name";
     db.users().insertGroup(defaultOrg, newName);
@@ -242,7 +240,7 @@ public class UpdateActionTest {
 
   @Test
   public void fail_if_description_is_too_long() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "a name");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "a name");
     loginAsAdmin();
 
     expectedException.expect(IllegalArgumentException.class);

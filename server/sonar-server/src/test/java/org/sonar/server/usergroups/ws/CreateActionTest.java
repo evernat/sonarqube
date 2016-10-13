@@ -28,17 +28,15 @@ import org.sonar.api.utils.System2;
 import org.sonar.core.permission.GlobalPermissions;
 import org.sonar.db.DbTester;
 import org.sonar.db.organization.OrganizationDto;
-import org.sonar.db.organization.OrganizationTesting;
 import org.sonar.db.user.GroupDto;
 import org.sonar.server.exceptions.ForbiddenException;
 import org.sonar.server.exceptions.ServerException;
 import org.sonar.server.organization.DefaultOrganization;
-import org.sonar.server.organization.DefaultOrganizationProviderRule;
+import org.sonar.server.organization.TestDefaultOrganizationProvider;
 import org.sonar.server.tester.UserSessionRule;
 import org.sonar.server.ws.WsTester;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonar.db.organization.OrganizationTesting.newOrganizationDto;
 
 public class CreateActionTest {
 
@@ -49,7 +47,7 @@ public class CreateActionTest {
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
-  private DefaultOrganizationProviderRule defaultOrganizationProvider = DefaultOrganizationProviderRule.create(db);
+  private TestDefaultOrganizationProvider defaultOrganizationProvider = TestDefaultOrganizationProvider.from(db);
   private WsTester ws;
 
   @Before
@@ -74,7 +72,7 @@ public class CreateActionTest {
         "  }" +
         "}");
 
-    assertThat(db.users().selectGroup(defaultOrganizationProvider.getDto(), "some-product-bu")).isPresent();
+    assertThat(db.users().selectGroup(db.getDefaultOrganization(), "some-product-bu")).isPresent();
   }
 
   @Test
@@ -137,7 +135,7 @@ public class CreateActionTest {
 
   @Test
   public void fail_if_group_with_same_name_already_exists() throws Exception {
-    GroupDto group = db.users().insertGroup(defaultOrganizationProvider.getDto(), "the-group");
+    GroupDto group = db.users().insertGroup(db.getDefaultOrganization(), "the-group");
 
     expectedException.expect(ServerException.class);
     expectedException.expectMessage("Group '" + group.getName() + "' already exists");

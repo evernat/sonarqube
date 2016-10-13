@@ -27,17 +27,15 @@ import org.sonar.api.server.ws.WebService.Param;
 import org.sonar.api.utils.System2;
 import org.sonar.db.DbTester;
 import org.sonar.db.organization.OrganizationDto;
-import org.sonar.db.organization.OrganizationTesting;
 import org.sonar.db.user.GroupDto;
 import org.sonar.db.user.UserDto;
 import org.sonar.server.exceptions.UnauthorizedException;
-import org.sonar.server.organization.DefaultOrganizationProviderRule;
+import org.sonar.server.organization.TestDefaultOrganizationProvider;
 import org.sonar.server.tester.UserSessionRule;
 import org.sonar.server.ws.WsTester;
 
 import static org.apache.commons.lang.StringUtils.capitalize;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonar.db.organization.OrganizationTesting.newOrganizationDto;
 import static org.sonar.db.user.GroupTesting.newGroupDto;
 
 public class SearchActionTest {
@@ -195,7 +193,7 @@ public class SearchActionTest {
   }
 
   private GroupWsSupport newGroupWsSupport() {
-    return new GroupWsSupport(db.getDbClient(), DefaultOrganizationProviderRule.create(db));
+    return new GroupWsSupport(db.getDbClient(), TestDefaultOrganizationProvider.from(db));
   }
 
 }
