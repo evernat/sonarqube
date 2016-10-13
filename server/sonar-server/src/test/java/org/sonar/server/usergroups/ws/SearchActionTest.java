@@ -155,7 +155,7 @@ public class SearchActionTest {
 
   @Test
   public void search_in_organization() throws Exception {
-    OrganizationDto org = OrganizationTesting.insert(db, newOrganizationDto());
+    OrganizationDto org = db.organizations().insert();
     GroupDto group = db.users().insertGroup(org, "users");
     // the group in default org is not returned
     db.users().insertGroup(db.getDefaultOrganization(), "users");

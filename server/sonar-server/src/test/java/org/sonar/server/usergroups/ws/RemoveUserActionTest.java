@@ -107,7 +107,7 @@ public class RemoveUserActionTest {
 
   @Test
   public void remove_user_by_group_name_in_specific_organization() throws Exception {
-    OrganizationDto org = OrganizationTesting.insert(db, OrganizationTesting.newOrganizationDto());
+    OrganizationDto org = db.organizations().insert();
     GroupDto group = db.users().insertGroup(org, "a_group");
     UserDto user = db.users().insertUser("user_login");
     db.users().insertMember(group, user);

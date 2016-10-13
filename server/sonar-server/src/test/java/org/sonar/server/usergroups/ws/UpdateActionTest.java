@@ -154,7 +154,7 @@ public class UpdateActionTest {
 
   @Test
   public void do_not_update_default_group_of_default_organization_if_updating_group_on_non_default_organization() throws Exception {
-    OrganizationDto org = OrganizationTesting.insert(db, newOrganizationDto());
+    OrganizationDto org = db.organizations().insert();
     when(settings.getString(DEFAULT_GROUP_NAME_KEY)).thenReturn(DEFAULT_GROUP_NAME_VALUE);
     GroupDto groupInDefaultOrg = db.users().insertGroup(defaultOrganizationProvider.getDto(), DEFAULT_GROUP_NAME_VALUE);
     GroupDto group = db.users().insertGroup(org, DEFAULT_GROUP_NAME_VALUE);

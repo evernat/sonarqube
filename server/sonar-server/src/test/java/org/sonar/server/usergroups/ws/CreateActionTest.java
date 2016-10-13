@@ -79,7 +79,7 @@ public class CreateActionTest {
 
   @Test
   public void create_group_on_specific_organization() throws Exception {
-    OrganizationDto org = OrganizationTesting.insert(db, newOrganizationDto());
+    OrganizationDto org = db.organizations().insert();
 
     loginAsAdmin();
     newRequest()
@@ -150,7 +150,7 @@ public class CreateActionTest {
 
   @Test
   public void fail_if_group_with_same_name_already_exists_in_the_organization() throws Exception {
-    OrganizationDto org = OrganizationTesting.insert(db, newOrganizationDto());
+    OrganizationDto org = db.organizations().insert();
     GroupDto group = db.users().insertGroup(org, "the-group");
 
     expectedException.expect(ServerException.class);
@@ -166,8 +166,8 @@ public class CreateActionTest {
   @Test
   public void add_group_with_a_name_that_already_exists_in_another_organization() throws Exception {
     String name = "the-group";
-    OrganizationDto org1 = OrganizationTesting.insert(db, newOrganizationDto());
-    OrganizationDto org2 = OrganizationTesting.insert(db, newOrganizationDto());
+    OrganizationDto org1 = db.organizations().insert();
+    OrganizationDto org2 = db.organizations().insert();
     GroupDto group = db.users().insertGroup(org1, name);
 
     loginAsAdmin();

@@ -33,7 +33,6 @@ import org.sonar.db.component.ComponentDbTester;
 import org.sonar.db.component.ComponentDto;
 import org.sonar.db.component.ComponentTesting;
 import org.sonar.db.organization.OrganizationDto;
-import org.sonar.db.organization.OrganizationTesting;
 import org.sonar.db.user.GroupDto;
 import org.sonar.db.user.UserDto;
 import org.sonar.server.exceptions.NotFoundException;
@@ -102,7 +101,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_by_name_and_organization() throws Exception {
-    OrganizationDto org = OrganizationTesting.insert(db, newOrganizationDto());
+    OrganizationDto org = db.organizations().insert();
     GroupDto group = db.users().insertGroup(org, "to-delete");
 
     loginAsAdmin();
@@ -117,8 +116,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_by_name_fails_if_organization_is_not_correct() throws Exception {
-    OrganizationDto org = newOrganizationDto().setUuid("org1");
-    OrganizationTesting.insert(db, org);
+    db.organizations().insert(newOrganizationDto().setUuid("org1"));
 
     loginAsAdmin();
 
@@ -192,7 +190,7 @@ public class DeleteActionTest {
 
   @Test
   public void delete_group_of_an_organization_even_if_name_is_default_group_of_default_organization() throws Exception {
-    OrganizationDto org = OrganizationTesting.insert(db, newOrganizationDto());
+    OrganizationDto org = db.organizations().insert();
     GroupDto group = db.users().insertGroup(org, defaultGroup.getName());
 
     loginAsAdmin();
