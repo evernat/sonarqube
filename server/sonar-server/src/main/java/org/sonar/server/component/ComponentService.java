@@ -107,15 +107,6 @@ public class ComponentService {
     }
   }
 
-  public void updateKey(String projectOrModuleKey, String newKey) {
-    DbSession dbSession = dbClient.openSession(false);
-    try {
-      updateKey(dbSession, projectOrModuleKey, newKey);
-    } finally {
-      dbSession.close();
-    }
-  }
-
   public void updateKey(DbSession dbSession, String projectOrModuleKey, String newKey) {
     ComponentDto component = componentFinder.getByKey(dbSession, projectOrModuleKey);
     userSession.checkComponentUuidPermission(UserRole.ADMIN, component.projectUuid());
