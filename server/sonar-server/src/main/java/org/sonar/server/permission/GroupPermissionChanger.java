@@ -20,23 +20,26 @@
 package org.sonar.server.permission;
 
 import java.util.List;
-import org.sonar.core.permission.GlobalPermissions;
 import org.sonar.db.DbClient;
 import org.sonar.db.DbSession;
 import org.sonar.db.permission.GroupPermissionDto;
 import org.sonar.server.exceptions.BadRequestException;
+import org.sonar.server.organization.DefaultOrganizationProvider;
 import org.sonar.server.user.UserSession;
 
+import static org.sonar.core.permission.GlobalPermissions.SYSTEM_ADMIN;
 import static org.sonar.server.permission.ws.PermissionRequestValidator.validateNotAnyoneAndAdminPermission;
 
 public class GroupPermissionChanger {
 
   private final DbClient dbClient;
   private final UserSession userSession;
+  private final DefaultOrganizationProvider defaultOrganizationProvider;
 
-  public GroupPermissionChanger(DbClient dbClient, UserSession userSession) {
+  public GroupPermissionChanger(DbClient dbClient, UserSession userSession, DefaultOrganizationProvider defaultOrganizationProvider) {
     this.dbClient = dbClient;
     this.userSession = userSession;
+    this.defaultOrganizationProvider = defaultOrganizationProvider;
   }
 
   public boolean apply(DbSession dbSession, GroupPermissionChange change) {
@@ -67,6 +70,9 @@ public class GroupPermissionChanger {
       default:
         throw new UnsupportedOperationException("Unsupported permission change: " + change.getOperation());
     }
+    if (SYSTEM_ADMIN.equals(change.getPermission()) && !change.getGroupIdOrAnyone().isAnyone()) {
+      dbClient.groupDao().updateRootFlagOfUsersInGroupFromPermissions(dbSession, change.getGroupIdOrAnyone().getId(), defaultOrganizationProvider.get().getUuid());
+    }
     return true;
   }
 
@@ -88,11 +94,11 @@ public class GroupPermissionChanger {
   }
 
   private void checkAdminUsersExistOutsideTheRemovedGroup(DbSession dbSession, GroupPermissionChange change) {
-    if (GlobalPermissions.SYSTEM_ADMIN.equals(change.getPermission()) &&
+    if (SYSTEM_ADMIN.equals(change.getPermission()) &&
       !change.getProjectRef().isPresent() &&
       // TODO support organizations
       dbClient.roleDao().countUserPermissions(dbSession, change.getPermission(), change.getGroupIdOrAnyone().getId()) <= 0) {
-      throw new BadRequestException(String.format("Last group with '%s' permission. Permission cannot be removed.", GlobalPermissions.SYSTEM_ADMIN));
+      throw new BadRequestException(String.format("Last group with '%s' permission. Permission cannot be removed.", SYSTEM_ADMIN));
     }
   }
 

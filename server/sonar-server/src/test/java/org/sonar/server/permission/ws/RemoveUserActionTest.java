@@ -22,6 +22,7 @@ package org.sonar.server.permission.ws;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonar.db.component.ComponentDto;
+import org.sonar.db.organization.OrganizationDto;
 import org.sonar.db.user.UserDto;
 import org.sonar.server.exceptions.BadRequestException;
 import org.sonar.server.exceptions.NotFoundException;
@@ -39,6 +40,7 @@ import static org.sonar.db.component.ComponentTesting.newProjectDto;
 import static org.sonar.db.component.ComponentTesting.newView;
 import static org.sonar.server.permission.ws.RemoveUserAction.ACTION;
 import static org.sonarqube.ws.client.permission.PermissionsWsParameters.CONTROLLER;
+import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_ORGANIZATION_KEY;
 import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_PERMISSION;
 import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_PROJECT_ID;
 import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_PROJECT_KEY;
@@ -225,6 +227,61 @@ public class RemoveUserActionTest extends BasePermissionWsTest<RemoveUserAction>
       .setParam(PARAM_USER_LOGIN, user.getLogin())
       .setParam(PARAM_PROJECT_ID, project.uuid())
       .setParam(PARAM_PROJECT_KEY, project.getKey())
+      .execute();
+  }
+
+  @Test
+  public void sets_root_flag_to_false_when_removing_user_admin_permission_of_default_organization_without_org_parameter() throws Exception {
+    UserDto lastAdminUser = db.users().insertRootByUserPermission();
+    UserDto adminUser = db.users().insertRootByUserPermission();
+    loginAsAdmin();
+
+    executeRequest(adminUser, SYSTEM_ADMIN);
+
+    db.rootFlag().verify(adminUser, false);
+  }
+
+  @Test
+  public void sets_root_flag_to_false_when_removing_user_admin_permission_of_default_organization_with_org_parameter() throws Exception {
+    UserDto lastAdminUser = db.users().insertRootByUserPermission();
+    UserDto adminUser = db.users().insertRootByUserPermission();
+    loginAsAdmin();
+
+    executeRequest(adminUser, db.getDefaultOrganization(), SYSTEM_ADMIN);
+
+    db.rootFlag().verify(adminUser, false);
+  }
+
+  @Test
+  public void does_not_set_root_flag_to_false_when_removing_user_admin_permission_of_other_organization() throws Exception {
+    UserDto rootUser = db.users().insertRootByUserPermission();
+    UserDto notRootUser = db.users().insertUser();
+    OrganizationDto otherOrganization = db.organizations().insert();
+    db.users().insertPermissionOnUser(otherOrganization, rootUser, SYSTEM_ADMIN);
+    db.users().insertPermissionOnUser(otherOrganization, notRootUser, SYSTEM_ADMIN);
+    loginAsAdmin();
+
+    executeRequest(rootUser, otherOrganization, SYSTEM_ADMIN);
+    db.rootFlag().verify(rootUser, true);
+    db.rootFlag().verifyUnchanged(notRootUser);
+
+    executeRequest(rootUser, otherOrganization, SYSTEM_ADMIN);
+    db.rootFlag().verify(rootUser, true);
+    db.rootFlag().verify(notRootUser, false);
+  }
+
+  private void executeRequest(UserDto userDto, OrganizationDto organizationDto, String permission) throws Exception {
+    wsTester.newPostRequest(CONTROLLER, ACTION)
+      .setParam(PARAM_USER_LOGIN, userDto.getLogin())
+      .setParam(PARAM_PERMISSION, permission)
+      .setParam(PARAM_ORGANIZATION_KEY, organizationDto.getKey())
+      .execute();
+  }
+
+  private void executeRequest(UserDto userDto, String permission) throws Exception {
+    wsTester.newPostRequest(CONTROLLER, ACTION)
+      .setParam(PARAM_USER_LOGIN, userDto.getLogin())
+      .setParam(PARAM_PERMISSION, permission)
       .execute();
   }
 

@@ -34,6 +34,7 @@ import org.sonar.db.organization.OrganizationDto;
 import org.sonar.db.user.GroupDto;
 import org.sonar.server.exceptions.BadRequestException;
 import org.sonar.server.exceptions.ForbiddenException;
+import org.sonar.server.organization.TestDefaultOrganizationProvider;
 import org.sonar.server.tester.UserSessionRule;
 import org.sonar.server.usergroups.ws.GroupIdOrAnyone;
 
@@ -44,12 +45,11 @@ public class GroupPermissionChangerTest {
 
   @Rule
   public DbTester db = DbTester.create(System2.INSTANCE);
-
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
   private UserSessionRule userSession = UserSessionRule.standalone();
-  private GroupPermissionChanger underTest = new GroupPermissionChanger(db.getDbClient(), userSession);
+  private GroupPermissionChanger underTest = new GroupPermissionChanger(db.getDbClient(), userSession, TestDefaultOrganizationProvider.from(db));
   private OrganizationDto org;
   private GroupDto group;
   private ComponentDto project;

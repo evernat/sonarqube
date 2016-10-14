@@ -19,16 +19,18 @@
  */
 package org.sonar.server.usergroups.ws;
 
+import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonar.api.utils.System2;
-import org.sonar.core.permission.GlobalPermissions;
 import org.sonar.db.DbTester;
 import org.sonar.db.organization.OrganizationDto;
 import org.sonar.db.user.GroupDto;
 import org.sonar.db.user.UserDto;
+import org.sonar.db.user.UserMembershipDto;
+import org.sonar.db.user.UserMembershipQuery;
 import org.sonar.server.exceptions.NotFoundException;
 import org.sonar.server.exceptions.UnauthorizedException;
 import org.sonar.server.organization.TestDefaultOrganizationProvider;
@@ -36,6 +38,7 @@ import org.sonar.server.tester.UserSessionRule;
 import org.sonar.server.ws.WsTester;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.sonar.core.permission.GlobalPermissions.SYSTEM_ADMIN;
 import static org.sonar.server.usergroups.ws.GroupWsSupport.PARAM_GROUP_NAME;
 import static org.sonar.server.usergroups.ws.GroupWsSupport.PARAM_LOGIN;
 import static org.sonar.server.usergroups.ws.GroupWsSupport.PARAM_ORGANIZATION_KEY;
@@ -54,7 +57,7 @@ public class AddUserActionTest {
 
   @Before
   public void setUp() {
-    ws = new WsTester(new UserGroupsWs(new AddUserAction(db.getDbClient(), userSession, newGroupWsSupport())));
+    ws = new WsTester(new UserGroupsWs(new AddUserAction(db.getDbClient(), userSession, newGroupWsSupport(), defaultOrganizationProvider)));
   }
 
   @Test
@@ -190,9 +193,54 @@ public class AddUserActionTest {
 
     expectedException.expect(UnauthorizedException.class);
 
+    executeRequest(group, user);
+  }
+
+  @Test
+  public void set_root_flag_to_true_when_adding_user_to_group_of_default_organization_with_admin_permission() throws Exception {
+    GroupDto group = db.users().insertAdminGroup();
+    UserDto falselyRootUser = db.users().makeRoot(db.users().insertUser("falselyRootUser"));
+    UserDto notRootUser = db.users().insertUser("notRootUser");
+    loginAsAdmin();
+
+    executeRequest(group, falselyRootUser);
+    verifyUserInGroup(falselyRootUser, group);
+    db.rootFlag().verify(falselyRootUser, true);
+    verifyUserNotInGroup(notRootUser, group);
+    db.rootFlag().verifyUnchanged(notRootUser);
+
+    executeRequest(group, notRootUser);
+    verifyUserInGroup(falselyRootUser, group);
+    db.rootFlag().verify(falselyRootUser, true);
+    verifyUserInGroup(notRootUser, group);
+    db.rootFlag().verify(notRootUser, true);
+  }
+
+  @Test
+  public void does_not_set_root_flag_to_true_when_adding_user_to_group_of_other_organization_with_admin_permission() throws Exception {
+    OrganizationDto otherOrganization = db.organizations().insert();
+    GroupDto group = db.users().insertAdminGroup(otherOrganization);
+    UserDto falselyRootUser = db.users().makeRoot(db.users().insertUser("falselyRootUser"));
+    UserDto notRootUser = db.users().insertUser("notRootUser");
+    loginAsAdmin();
+
+    executeRequest(group, falselyRootUser);
+    verifyUserInGroup(falselyRootUser, group);
+    db.rootFlag().verify(falselyRootUser, false);
+    verifyUserNotInGroup(notRootUser, group);
+    db.rootFlag().verifyUnchanged(notRootUser);
+
+    executeRequest(group, notRootUser);
+    verifyUserInGroup(falselyRootUser, group);
+    db.rootFlag().verify(falselyRootUser, false);
+    verifyUserInGroup(notRootUser, group);
+    db.rootFlag().verify(notRootUser, false);
+  }
+
+  private void executeRequest(GroupDto groupDto, UserDto userDto) throws Exception {
     newRequest()
-      .setParam("id", group.getId().toString())
-      .setParam("login", user.getLogin())
+      .setParam("id", groupDto.getId().toString())
+      .setParam("login", userDto.getLogin())
       .execute();
   }
 
@@ -201,11 +249,31 @@ public class AddUserActionTest {
   }
 
   private void loginAsAdmin() {
-    userSession.login("admin").setGlobalPermissions(GlobalPermissions.SYSTEM_ADMIN);
+    userSession.login("admin").setGlobalPermissions(SYSTEM_ADMIN);
   }
 
   private GroupWsSupport newGroupWsSupport() {
     return new GroupWsSupport(db.getDbClient(), defaultOrganizationProvider);
+  }
+
+  private void verifyUserInGroup(UserDto userDto, GroupDto groupDto) {
+    assertThat(isUserInGroup(userDto, groupDto))
+      .as("user '%s' is a member of group '%s' of organization '%s'", userDto.getLogin(), groupDto.getName(), groupDto.getOrganizationUuid())
+      .isTrue();
+  }
+
+  private void verifyUserNotInGroup(UserDto userDto, GroupDto groupDto) {
+    assertThat(isUserInGroup(userDto, groupDto))
+      .as("user '%s' is not a member of group '%s' of organization '%s'", userDto.getLogin(), groupDto.getName(), groupDto.getOrganizationUuid())
+      .isFalse();
+  }
+
+  private boolean isUserInGroup(UserDto userDto, GroupDto groupDto) {
+    List<UserMembershipDto> members = db.getDbClient().groupMembershipDao()
+      .selectMembers(db.getSession(), UserMembershipQuery.builder().groupId(groupDto.getId()).membership(UserMembershipQuery.IN).build(), 0, Integer.MAX_VALUE);
+    return members
+      .stream()
+      .anyMatch(dto -> dto.getLogin().equals(userDto.getLogin()));
   }
 
 }
