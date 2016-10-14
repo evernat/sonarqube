@@ -76,7 +76,7 @@ public class CoverageExclusionsTest {
 
     exception.expect(IllegalStateException.class);
     exception.expectMessage("must be > 0");
-    filter.validate(measure, "testfile");
+    filter.validateCoverageMeasure(measure, "testfile");
   }
 
   @Test
@@ -93,7 +93,7 @@ public class CoverageExclusionsTest {
 
     exception.expect(IllegalStateException.class);
     exception.expectMessage("resource is not indexed as a file");
-    filter.validate(measure, "dummy");
+    filter.validateCoverageMeasure(measure, "dummy");
   }
 
   @Test
@@ -108,7 +108,7 @@ public class CoverageExclusionsTest {
     when(measure.getData()).thenReturn(data);
 
     exception.expect(IllegalStateException.class);
-    filter.validate(measure, file);
+    filter.validateCoverageMeasure(measure, file);
   }
 
   @Test
