@@ -54,7 +54,7 @@ public class UserPermissionChanger {
         break;
       case REMOVE:
         checkOtherAdminUsersExist(dbSession, change);
-        dbClient.userPermissionDao().delete(dbSession, change.getUserId().getLogin(), change.getProjectUuid(), change.getPermission());
+        dbClient.userPermissionDao().delete(dbSession, change.getOrganizationUuid(), change.getUserId().getLogin(), change.getProjectUuid(), change.getPermission());
         break;
       default:
         throw new UnsupportedOperationException("Unsupported permission change: " + change.getOperation());

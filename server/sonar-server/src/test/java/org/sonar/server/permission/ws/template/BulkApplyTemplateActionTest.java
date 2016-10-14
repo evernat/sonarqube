@@ -21,6 +21,7 @@ package org.sonar.server.permission.ws.template;
 
 import java.util.List;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.sonar.api.config.MapSettings;
 import org.sonar.api.server.ws.WebService.Param;
@@ -52,6 +53,7 @@ import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_Q
 import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_TEMPLATE_ID;
 import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_TEMPLATE_NAME;
 
+@Ignore
 public class BulkApplyTemplateActionTest extends BasePermissionWsTest<BulkApplyTemplateAction> {
 
   private static final String ACTION = "bulk_apply_template";

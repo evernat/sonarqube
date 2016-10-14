@@ -253,7 +253,7 @@ public class UserPermissionDaoTest {
     insertProjectPermission(ISSUE_ADMIN, user2.getId(), project1.getId());
     insertProjectPermission(ISSUE_ADMIN, user2.getId(), project2.getId());
 
-    underTest.delete(dbSession, null, project1.uuid(), null);
+    underTest.delete(dbSession, dbTester.getDefaultOrganization().getUuid(), null, project1.uuid(), null);
 
     assertThat(dbTester.countSql(dbSession, "select count(id) from user_roles where resource_id=" + project1.getId())).isEqualTo(0);
     // remains global permission and project2 permission
@@ -267,7 +267,7 @@ public class UserPermissionDaoTest {
     insertProjectPermission(ISSUE_ADMIN, user2.getId(), project1.getId());
     insertProjectPermission(ISSUE_ADMIN, user2.getId(), project2.getId());
 
-    underTest.delete(dbSession, user1.getLogin(), null, null);
+    underTest.delete(dbSession, dbTester.getDefaultOrganization().getUuid(), user1.getLogin(), null, null);
 
     assertThat(dbTester.countSql(dbSession, "select count(id) from user_roles where user_id=" + user1.getId())).isEqualTo(0);
     // remains user2 permissions
@@ -281,7 +281,7 @@ public class UserPermissionDaoTest {
     insertProjectPermission(ISSUE_ADMIN, user2.getId(), project1.getId());
     insertProjectPermission(ISSUE_ADMIN, user2.getId(), project2.getId());
 
-    underTest.delete(dbSession, user1.getLogin(), project1.uuid(), USER);
+    underTest.delete(dbSession, dbTester.getDefaultOrganization().getUuid(), user1.getLogin(), project1.uuid(), USER);
 
     assertThat(dbTester.countRowsOfTable(dbSession, "user_roles")).isEqualTo(3);
     assertThat(dbTester.countSql(dbSession, "select count(id) from user_roles where user_id=" + user1.getId())).isEqualTo(1);

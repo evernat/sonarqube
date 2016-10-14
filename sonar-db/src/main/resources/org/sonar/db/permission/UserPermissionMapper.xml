@@ -83,6 +83,7 @@
   <delete id="delete" parameterType="map">
     delete from user_roles
     <where>
+      organization_uuid = #{organizationUuid,jdbcType=VARCHAR}
       <choose>
         <when test="login != null">
           and user_id = (select id from users where login = #{login})

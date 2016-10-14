@@ -22,6 +22,7 @@ package org.sonar.server.permission.ws.template;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.sonar.api.config.MapSettings;
 import org.sonar.api.web.UserRole;
@@ -53,6 +54,7 @@ import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_P
 import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_TEMPLATE_ID;
 import static org.sonarqube.ws.client.permission.PermissionsWsParameters.PARAM_TEMPLATE_NAME;
 
+@Ignore
 public class ApplyTemplateActionTest extends BasePermissionWsTest<ApplyTemplateAction> {
 
   private static final String ACTION = "apply_template";

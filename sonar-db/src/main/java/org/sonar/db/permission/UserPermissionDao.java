@@ -118,9 +118,9 @@ public class UserPermissionDao implements Dao {
    * 
    * @see UserPermissionMapper#delete(String, String, String)
    */
-  public void delete(DbSession dbSession, @Nullable String login, @Nullable String projectUuid, @Nullable String permission) {
+  public void delete(DbSession dbSession, String organizationUuid, @Nullable String login, @Nullable String projectUuid, @Nullable String permission) {
     checkArgument(isNotEmpty(login) || isNotEmpty(projectUuid), "At least one of login or project must be set");
-    mapper(dbSession).delete(login, projectUuid, permission);
+    mapper(dbSession).delete(organizationUuid, login, projectUuid, permission);
   }
 
   private static UserPermissionMapper mapper(DbSession dbSession) {
