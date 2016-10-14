@@ -18,51 +18,38 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package org.sonarqube.ws.client.component;
+package org.sonar.server.component.ws;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.sonar.api.utils.System2;
+import org.sonar.db.DbClient;
+import org.sonar.db.DbTester;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class SearchProjectsRequestTest {
+@Ignore
+public class SearchProjectsQueryBuilderValidatorTest {
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
-  SearchProjectsRequest.Builder underTest = SearchProjectsRequest.builder();
+  @Rule
+  public DbTester db = DbTester.create(System2.INSTANCE);
+
+  DbClient dbClient = db.getDbClient();
+
+  SearchProjectsQueryBuilderValidator validator = new SearchProjectsQueryBuilderValidator(dbClient);
 
   @Test
-  public void filter_parameter() throws Exception {
-    SearchProjectsRequest result = underTest
-      .setFilter("ncloc > 10")
-      .build();
-
-    assertThat(result.getFilter()).isEqualTo("ncloc > 10");
+  public void validate() throws Exception {
+    validator.validate(SearchProjectsQueryBuilder.build("ncloc > 10"));
   }
 
   @Test
-  public void default_page_values() {
-    SearchProjectsRequest result = underTest.build();
-
-    assertThat(result.getPage()).isEqualTo(1);
-    assertThat(result.getPageSize()).isEqualTo(100);
-  }
-
-  @Test
-  public void handle_paging_limit_values() {
-    SearchProjectsRequest result = underTest.setPageSize(500).build();
-
-    assertThat(result.getPage()).isEqualTo(1);
-    assertThat(result.getPageSize()).isEqualTo(500);
-  }
-
-  @Test
-  public void fail_if_page_size_greater_than_500() {
+  public void fail_when_metric_does_not_exists() throws Exception {
     expectedException.expect(IllegalArgumentException.class);
-    expectedException.expectMessage("Page size must not be greater than 500");
-
-    underTest.setPageSize(501).build();
+    expectedException.expectMessage("Unknown metric 'unknown'");
+    validator.validate(SearchProjectsQueryBuilder.build("unknown > 10"));
   }
 }

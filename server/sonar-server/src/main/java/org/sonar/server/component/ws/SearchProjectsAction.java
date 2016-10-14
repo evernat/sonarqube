@@ -38,7 +38,10 @@ import org.sonarqube.ws.WsComponents.Component;
 import org.sonarqube.ws.WsComponents.SearchProjectsWsResponse;
 import org.sonarqube.ws.client.component.SearchProjectsRequest;
 
+import static org.sonar.server.component.ws.SearchProjectsQueryBuilder.SearchProjectsCriteriaQuery;
+import static org.sonar.server.component.ws.SearchProjectsQueryBuilder.build;
 import static org.sonar.server.ws.WsUtils.writeProtobuf;
+import static org.sonarqube.ws.client.component.ComponentsWsParameters.PARAM_FILTER;
 import static org.sonarqube.ws.client.component.SearchProjectsRequest.DEFAULT_PAGE_SIZE;
 import static org.sonarqube.ws.client.component.SearchProjectsRequest.MAX_PAGE_SIZE;
 
@@ -53,13 +56,18 @@ public class SearchProjectsAction implements ComponentsWsAction {
 
   @Override
   public void define(WebService.NewController context) {
-    context.createAction("search_projects")
+    WebService.NewAction action = context.createAction("search_projects")
       .setSince("6.2")
       .setDescription("Search for projects")
       .addPagingParams(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
       .setInternal(true)
       .setResponseExample(getClass().getResource("search_projects-example.json"))
       .setHandler(this);
+
+    action
+      .createParam(PARAM_FILTER)
+      .setDescription("TODO")
+      .setSince("6.2");
   }
 
   @Override
@@ -78,6 +86,11 @@ public class SearchProjectsAction implements ComponentsWsAction {
   }
 
   private SearchResults searchProjects(DbSession dbSession, SearchProjectsRequest request) {
+    String filter = request.getFilter();
+    if (filter != null) {
+      SearchProjectsCriteriaQuery query = build(filter);
+      // TODO validate query
+    }
     SearchIdResult<String> searchResult = index.search(new SearchOptions().setPage(request.getPage(), request.getPageSize()));
 
     Ordering<ComponentDto> ordering = Ordering.explicit(searchResult.getIds()).onResultOf(ComponentDto::uuid);
@@ -87,11 +100,10 @@ public class SearchProjectsAction implements ComponentsWsAction {
   }
 
   private static SearchProjectsRequest toRequest(Request httpRequest) {
-    SearchProjectsRequest.Builder request = SearchProjectsRequest.builder();
-
-    request.setPage(httpRequest.mandatoryParamAsInt(Param.PAGE));
-    request.setPageSize(httpRequest.mandatoryParamAsInt(Param.PAGE_SIZE));
-
+    SearchProjectsRequest.Builder request = SearchProjectsRequest.builder()
+      .setFilter(httpRequest.param(PARAM_FILTER))
+      .setPage(httpRequest.mandatoryParamAsInt(Param.PAGE))
+      .setPageSize(httpRequest.mandatoryParamAsInt(Param.PAGE_SIZE));
     return request.build();
   }
 
